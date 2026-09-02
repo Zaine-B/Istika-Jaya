@@ -1,541 +1,851 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiveCode Export</title>
-    
-    <!-- ============================================ -->
-    <!-- CSS CODE (from the CSS editor)               -->
-    <!-- ============================================ -->
-    <style>
-
-    </style>
-    <!-- ============================================ -->
-    
-</head>
-<body>
-    <!-- ============================================ -->
-    <!-- HTML CODE (from the HTML editor)             -->
-    <!-- ============================================ -->
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
 <title>PDF Flipbook</title>
 
-<!-- PDF.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs"
-        type="module"></script>
-
-<!-- StPageFlip -->
-<script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
-
 <style>
-    * {
-        box-sizing: border-box;
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    background: #202020;
+}
+
+/* =========================
+   MAIN CONTAINER
+========================= */
+
+.flipbook-app {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* =========================
+   TOOLBAR
+========================= */
+
+.toolbar {
+    height: 60px;
+    min-height: 60px;
+    background: #111;
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    padding: 8px 12px;
+    z-index: 1000;
+}
+
+.toolbar button {
+    border: none;
+    background: #333;
+    color: white;
+
+    min-width: 42px;
+    height: 40px;
+
+    border-radius: 6px;
+    cursor: pointer;
+
+    font-size: 18px;
+
+    transition: 0.2s;
+}
+
+.toolbar button:hover {
+    background: #555;
+}
+
+.toolbar button:active {
+    transform: scale(0.95);
+}
+
+.page-info {
+    min-width: 100px;
+    text-align: center;
+    font-size: 14px;
+}
+
+/* =========================
+   BOOK AREA
+========================= */
+
+.book-area {
+    flex: 1;
+    position: relative;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    overflow: hidden;
+
+    background:
+        radial-gradient(
+            circle at center,
+            #444 0%,
+            #222 60%,
+            #111 100%
+        );
+}
+
+/* =========================
+   BOOK
+========================= */
+
+.book-wrapper {
+    position: relative;
+
+    width: min(90vw, 900px);
+    height: min(82vh, 650px);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    perspective: 2500px;
+
+    transform-origin: center center;
+
+    transition: transform 0.25s ease;
+}
+
+.book {
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    transform-style: preserve-3d;
+}
+
+/* =========================
+   PDF PAGE
+========================= */
+
+.page {
+    position: absolute;
+
+    top: 0;
+    left: 50%;
+
+    width: 50%;
+    height: 100%;
+
+    background: white;
+
+    overflow: hidden;
+
+    transform-origin: left center;
+
+    transform-style: preserve-3d;
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,.45);
+
+    transition:
+        transform 0.9s cubic-bezier(.645,.045,.355,1);
+
+    backface-visibility: hidden;
+
+    user-select: none;
+}
+
+.page canvas {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: contain;
+
+    background: white;
+}
+
+/* Right page */
+
+.page.right {
+    left: 50%;
+    transform-origin: left center;
+}
+
+/* Turned page */
+
+.page.flipped {
+    transform: rotateY(-180deg);
+}
+
+/* =========================
+   PAGE SHADOW
+========================= */
+
+.page::after {
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    right: 0;
+
+    width: 100%;
+    height: 100%;
+
+    pointer-events: none;
+
+    background:
+        linear-gradient(
+            to left,
+            rgba(0,0,0,.18),
+            transparent 25%
+        );
+
+    opacity: 0;
+
+    transition: opacity .4s;
+}
+
+.page.flipped::after {
+    opacity: 1;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 700px) {
+
+    .toolbar {
+        height: 55px;
+        min-height: 55px;
     }
 
-    body {
-        margin: 0;
-        min-height: 100vh;
-        background: #1c1c1c;
-        font-family: Arial, sans-serif;
-        color: white;
-        display: flex;
-        flex-direction: column;
+    .toolbar button {
+        width: 38px;
+        min-width: 38px;
+        height: 36px;
+        font-size: 16px;
     }
 
-    /* Header */
-    header {
-        height: 65px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 20px;
-        background: #111;
-        border-bottom: 1px solid #333;
+    .page-info {
+        min-width: 80px;
+        font-size: 12px;
     }
 
-    header h1 {
-        margin: 0;
-        font-size: 20px;
-        font-weight: 600;
+    .book-wrapper {
+        width: 96vw;
+        height: 82vh;
     }
 
-    .upload-label {
-        background: #ffffff;
-        color: #111;
-        padding: 10px 18px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: bold;
+    /*
+       On small screens only one page is displayed.
+    */
+
+    .page {
+        left: 0;
+        width: 100%;
     }
 
-    #pdfInput {
-        display: none;
+    .page.right {
+        left: 0;
     }
+}
 
-    /* Flipbook area */
-    .book-area {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        overflow: hidden;
-    }
+/* =========================
+   LOADING
+========================= */
 
-    #book {
-        width: min(90vw, 1100px);
-        height: min(78vh, 750px);
-    }
+.loading {
+    position: absolute;
 
-    /* Controls */
-    .controls {
-        min-height: 70px;
-        background: #111;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        padding: 10px;
-        border-top: 1px solid #333;
-        flex-wrap: wrap;
-    }
+    left: 50%;
+    top: 50%;
 
-    button {
-        border: none;
-        background: #333;
-        color: white;
-        padding: 10px 16px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 14px;
-    }
+    transform: translate(-50%, -50%);
 
-    button:hover {
-        background: #555;
-    }
+    color: white;
 
-    button:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-    }
+    font-size: 18px;
 
-    #pageInfo {
-        min-width: 100px;
-        text-align: center;
-        font-size: 14px;
-    }
+    z-index: 2000;
+}
 
-    .zoom-control {
-        display: flex;
-        gap: 5px;
-    }
+/* =========================
+   FULLSCREEN
+========================= */
 
-    .loading {
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,.75);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-        font-size: 20px;
-    }
-
-    .loading.show {
-        display: flex;
-    }
-
-    /* Mobile */
-    @media (max-width: 700px) {
-
-        header {
-            height: 55px;
-        }
-
-        header h1 {
-            font-size: 16px;
-        }
-
-        #book {
-            width: 95vw;
-            height: 75vh;
-        }
-
-        .controls {
-            gap: 5px;
-        }
-
-        button {
-            padding: 8px 11px;
-        }
-    }
+:fullscreen .toolbar {
+    background: #000;
+}
 </style>
 </head>
 
+
 <body>
 
-<header>
-    <h1>📖 PDF Flipbook</h1>
+<div class="flipbook-app">
 
-    <label class="upload-label">
-        Open PDF
-        <input type="file" id="pdfInput" accept="application/pdf">
-    </label>
-</header>
+    <!-- TOOLBAR -->
 
-<div class="book-area">
-    <div id="book"></div>
-</div>
+    <div class="toolbar">
 
-<div class="controls">
+        <button id="prevBtn"
+                title="Previous page">
+            ◀
+        </button>
 
-    <button id="firstBtn">⏮ First</button>
+        <button id="nextBtn"
+                title="Next page">
+            ▶
+        </button>
 
-    <button id="prevBtn">◀ Previous</button>
+        <span class="page-info">
+            Page
+            <span id="currentPage">1</span>
+            /
+            <span id="totalPages">0</span>
+        </span>
 
-    <span id="pageInfo">
-        Page 0 / 0
-    </span>
+        <button id="zoomOut"
+                title="Zoom out">
+            −
+        </button>
 
-    <button id="nextBtn">Next ▶</button>
+        <button id="zoomIn"
+                title="Zoom in">
+            +
+        </button>
 
-    <button id="lastBtn">Last ⏭</button>
+        <button id="zoomReset"
+                title="Reset zoom">
+            100%
+        </button>
 
-    <div class="zoom-control">
-        <button id="zoomOut">−</button>
-        <button id="zoomIn">+</button>
+        <button id="fullscreenBtn"
+                title="Fullscreen">
+            ⛶
+        </button>
+
     </div>
 
-    <button id="fullscreenBtn">⛶ Fullscreen</button>
+
+    <!-- BOOK AREA -->
+
+    <div class="book-area">
+
+        <div class="loading"
+             id="loading">
+            Loading PDF...
+        </div>
+
+        <div class="book-wrapper"
+             id="bookWrapper">
+
+            <div class="book"
+                 id="book">
+            </div>
+
+        </div>
+
+    </div>
 
 </div>
 
-<div class="loading" id="loading">
-    Loading PDF...
-</div>
+
+<!-- PDF.JS -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs"
+        type="module">
+</script>
 
 
 <script type="module">
 
-import * as pdfjsLib from
-"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs";
+import * as pdfjsLib
+    from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs";
+
+
+/* =========================
+   PDF CONFIGURATION
+========================= */
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs";
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs";
 
 
-let flipBook = null;
-let totalPages = 0;
-let currentZoom = 1;
+/*
+    CHANGE THIS TO YOUR PDF FILE
+*/
+
+const PDF_URL = "IstikaJaya.pdf";
 
 
-/* --------------------------------
-   PDF FILE INPUT
--------------------------------- */
+/* =========================
+   ELEMENTS
+========================= */
 
-document.getElementById("pdfInput")
-.addEventListener("change", async function(event) {
+const book =
+    document.getElementById("book");
 
-    const file = event.target.files[0];
+const loading =
+    document.getElementById("loading");
 
-    if (!file) return;
+const currentPage =
+    document.getElementById("currentPage");
 
-    if (file.type !== "application/pdf") {
-        alert("Please select a PDF file.");
-        return;
-    }
+const totalPages =
+    document.getElementById("totalPages");
 
-    await loadPDF(file);
-});
+const bookWrapper =
+    document.getElementById("bookWrapper");
+
+const prevBtn =
+    document.getElementById("prevBtn");
+
+const nextBtn =
+    document.getElementById("nextBtn");
+
+const zoomIn =
+    document.getElementById("zoomIn");
+
+const zoomOut =
+    document.getElementById("zoomOut");
+
+const zoomReset =
+    document.getElementById("zoomReset");
+
+const fullscreenBtn =
+    document.getElementById("fullscreenBtn");
 
 
-/* --------------------------------
+/* =========================
+   VARIABLES
+========================= */
+
+let pdfDocument = null;
+
+let pages = [];
+
+let current = 0;
+
+let zoom = 1;
+
+let startX = 0;
+
+let dragging = false;
+
+
+/* =========================
    LOAD PDF
--------------------------------- */
+========================= */
 
-async function loadPDF(file) {
-
-    showLoading(true);
+async function loadPDF() {
 
     try {
 
-        const arrayBuffer = await file.arrayBuffer();
+        pdfDocument =
+            await pdfjsLib.getDocument(PDF_URL)
+                .promise;
 
-        const pdf = await pdfjsLib.getDocument({
-            data: arrayBuffer
-        }).promise;
+        totalPages.textContent =
+            pdfDocument.numPages;
 
-        totalPages = pdf.numPages;
+        loading.style.display =
+            "none";
 
-        const pages = [];
+        await createPages();
 
-        for (let i = 1; i <= totalPages; i++) {
+        updateBook();
 
-            const page = await pdf.getPage(i);
+    }
 
-            const viewport = page.getViewport({
-                scale: 1.5
-            });
+    catch(error) {
 
-            const canvas = document.createElement("canvas");
-
-            const context = canvas.getContext("2d");
-
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-
-            await page.render({
-                canvasContext: context,
-                viewport: viewport
-            }).promise;
-
-            const pageDiv = document.createElement("div");
-
-            pageDiv.className = "page";
-
-            pageDiv.style.background = "#fff";
-
-            pageDiv.appendChild(canvas);
-
-            pages.push(pageDiv);
-        }
-
-        createFlipbook(pages);
-
-    } catch (error) {
+        loading.textContent =
+            "Unable to load PDF.";
 
         console.error(error);
 
-        alert("Unable to load the PDF.");
-
     }
 
-    showLoading(false);
 }
 
 
-/* --------------------------------
-   CREATE FLIPBOOK
--------------------------------- */
+/* =========================
+   CREATE PAGES
+========================= */
 
-function createFlipbook(pages) {
+async function createPages() {
 
-    const book = document.getElementById("book");
+    for (
+        let i = 1;
+        i <= pdfDocument.numPages;
+        i++
+    ) {
 
-    book.innerHTML = "";
+        const pdfPage =
+            await pdfDocument.getPage(i);
 
-    flipBook = new St.PageFlip(book, {
+        const viewport =
+            pdfPage.getViewport({
+                scale: 1.5
+            });
 
-        width: 550,
-        height: 750,
+        const canvas =
+            document.createElement("canvas");
 
-        size: "stretch",
+        const context =
+            canvas.getContext("2d");
 
-        minWidth: 300,
-        maxWidth: 1000,
+        canvas.width =
+            viewport.width;
 
-        minHeight: 400,
-        maxHeight: 1000,
+        canvas.height =
+            viewport.height;
 
-        showCover: true,
-
-        mobileScrollSupport: false,
-
-        drawShadow: true,
-
-        flippingTime: 800,
-
-        usePortrait: true,
-
-        startPage: 0,
-
-        autoSize: true,
-
-        maxShadowOpacity: 0.5
-
-    });
+        await pdfPage.render({
+            canvasContext: context,
+            viewport: viewport
+        }).promise;
 
 
-    flipBook.loadFromHTML(pages);
+        const page =
+            document.createElement("div");
 
-    flipBook.on("flip", function(e) {
+        page.className = "page";
 
-        updatePageInfo(e.data);
+        page.dataset.index =
+            i - 1;
 
-    });
+        page.appendChild(canvas);
 
-    updatePageInfo(0);
+        book.appendChild(page);
+
+        pages.push(page);
+
+    }
+
 }
 
 
-/* --------------------------------
-   PAGE INFORMATION
--------------------------------- */
+/* =========================
+   UPDATE BOOK
+========================= */
 
-function updatePageInfo(page) {
+function updateBook() {
 
-    document.getElementById("pageInfo").textContent =
-        `Page ${page + 1} / ${totalPages}`;
+    pages.forEach(
+        (page, index) => {
 
-    document.getElementById("prevBtn").disabled =
-        page <= 0;
+            if (index < current) {
 
-    document.getElementById("firstBtn").disabled =
-        page <= 0;
+                page.classList.add(
+                    "flipped"
+                );
 
-    document.getElementById("nextBtn").disabled =
-        page >= totalPages - 1;
+            } else {
 
-    document.getElementById("lastBtn").disabled =
-        page >= totalPages - 1;
+                page.classList.remove(
+                    "flipped"
+                );
+
+            }
+
+            /*
+                Z-index keeps pages in
+                correct stacking order.
+            */
+
+            page.style.zIndex =
+                pages.length - index;
+
+        }
+    );
+
+
+    currentPage.textContent =
+        Math.min(
+            current + 1,
+            pages.length
+        );
+
 }
 
 
-/* --------------------------------
-   NAVIGATION
--------------------------------- */
+/* =========================
+   NEXT PAGE
+========================= */
 
-document.getElementById("prevBtn")
-.addEventListener("click", () => {
+function nextPage() {
 
-    if (flipBook) {
-        flipBook.flipPrev();
+    if (
+        current <
+        pages.length - 1
+    ) {
+
+        current++;
+
+        updateBook();
+
     }
 
-});
+}
 
 
-document.getElementById("nextBtn")
-.addEventListener("click", () => {
+/* =========================
+   PREVIOUS PAGE
+========================= */
 
-    if (flipBook) {
-        flipBook.flipNext();
+function previousPage() {
+
+    if (current > 0) {
+
+        current--;
+
+        updateBook();
+
     }
 
-});
+}
 
 
-document.getElementById("firstBtn")
-.addEventListener("click", () => {
+/* =========================
+   BUTTONS
+========================= */
 
-    if (flipBook) {
-        flipBook.turnToPage(0);
+nextBtn.addEventListener(
+    "click",
+    nextPage
+);
+
+prevBtn.addEventListener(
+    "click",
+    previousPage
+);
+
+
+/* =========================
+   KEYBOARD
+========================= */
+
+document.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.key ===
+            "ArrowRight"
+        ) {
+
+            nextPage();
+
+        }
+
+        if (
+            event.key ===
+            "ArrowLeft"
+        ) {
+
+            previousPage();
+
+        }
+
     }
-
-});
-
-
-document.getElementById("lastBtn")
-.addEventListener("click", () => {
-
-    if (flipBook) {
-        flipBook.turnToPage(totalPages - 1);
-    }
-
-});
+);
 
 
-/* --------------------------------
+/* =========================
    ZOOM
--------------------------------- */
+========================= */
 
-document.getElementById("zoomIn")
-.addEventListener("click", () => {
+function updateZoom() {
 
-    currentZoom += 0.1;
-
-    document.getElementById("book").style.transform =
-        `scale(${currentZoom})`;
-
-});
-
-
-document.getElementById("zoomOut")
-.addEventListener("click", () => {
-
-    currentZoom = Math.max(0.7, currentZoom - 0.1);
-
-    document.getElementById("book").style.transform =
-        `scale(${currentZoom})`;
-
-});
-
-
-/* --------------------------------
-   FULLSCREEN
--------------------------------- */
-
-document.getElementById("fullscreenBtn")
-.addEventListener("click", () => {
-
-    const bookArea = document.querySelector(".book-area");
-
-    if (!document.fullscreenElement) {
-
-        bookArea.requestFullscreen();
-
-    } else {
-
-        document.exitFullscreen();
-
-    }
-
-});
-
-
-/* --------------------------------
-   KEYBOARD CONTROLS
--------------------------------- */
-
-document.addEventListener("keydown", function(e) {
-
-    if (!flipBook) return;
-
-    if (e.key === "ArrowRight") {
-
-        flipBook.flipNext();
-
-    }
-
-    if (e.key === "ArrowLeft") {
-
-        flipBook.flipPrev();
-
-    }
-
-});
-
-
-/* --------------------------------
-   LOADING
--------------------------------- */
-
-function showLoading(show) {
-
-    document
-        .getElementById("loading")
-        .classList.toggle("show", show);
+    bookWrapper.style.transform =
+        `scale(${zoom})`;
 
 }
+
+
+zoomIn.addEventListener(
+    "click",
+    () => {
+
+        zoom += 0.1;
+
+        if (zoom > 2.5)
+            zoom = 2.5;
+
+        updateZoom();
+
+    }
+);
+
+
+zoomOut.addEventListener(
+    "click",
+    () => {
+
+        zoom -= 0.1;
+
+        if (zoom < 0.5)
+            zoom = 0.5;
+
+        updateZoom();
+
+    }
+);
+
+
+zoomReset.addEventListener(
+    "click",
+    () => {
+
+        zoom = 1;
+
+        updateZoom();
+
+    }
+);
+
+
+/* =========================
+   MOUSE DRAG
+========================= */
+
+book.addEventListener(
+    "mousedown",
+    event => {
+
+        dragging = true;
+
+        startX =
+            event.clientX;
+
+    }
+);
+
+
+document.addEventListener(
+    "mouseup",
+    event => {
+
+        if (!dragging)
+            return;
+
+        dragging = false;
+
+        const difference =
+            event.clientX - startX;
+
+
+        if (
+            Math.abs(difference) > 60
+        ) {
+
+            if (difference < 0)
+                nextPage();
+            else
+                previousPage();
+
+        }
+
+    }
+);
+
+
+/* =========================
+   TOUCH
+========================= */
+
+book.addEventListener(
+    "touchstart",
+    event => {
+
+        startX =
+            event.touches[0].clientX;
+
+    },
+    { passive: true }
+);
+
+
+book.addEventListener(
+    "touchend",
+    event => {
+
+        const endX =
+            event.changedTouches[0].clientX;
+
+        const difference =
+            endX - startX;
+
+
+        if (
+            Math.abs(difference) > 50
+        ) {
+
+            if (difference < 0)
+                nextPage();
+            else
+                previousPage();
+
+        }
+
+    },
+    { passive: true }
+);
+
+
+/* =========================
+   FULLSCREEN
+========================= */
+
+fullscreenBtn.addEventListener(
+    "click",
+    async () => {
+
+        if (!document.fullscreenElement) {
+
+            await document
+                .documentElement
+                .requestFullscreen();
+
+        } else {
+
+            await document
+                .exitFullscreen();
+
+        }
+
+    }
+);
+
+
+/* =========================
+   START
+========================= */
+
+loadPDF();
 
 </script>
 
 </body>
 </html>
-    <!-- ============================================ -->
-    
-    <!-- ============================================ -->
-    <!-- JAVASCRIPT CODE (from the JS editor)         -->
-    <!-- ============================================ -->
-    <script>
-
-    </script>
-    <!-- ============================================ -->
-    
-</body>
-</html>
+```
